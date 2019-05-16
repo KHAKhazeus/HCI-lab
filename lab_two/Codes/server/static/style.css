@@ -1,0 +1,33 @@
+#dropzone {
+    border: 2px dashed #0087F7;
+    border-radius: 5px;
+    background: white; }
+.dropzone{
+    text-align: center;
+}
+#dropzone .dropzone .dz-message {
+    font-weight: 400; }
+
+
+body {
+    display: flex;
+    /* height: 100vh; */
+    }
+    
+    .mdc-drawer-app-content {
+    flex: auto;
+    overflow: auto;
+    position: relative;
+    }
+    
+    .main-content {
+    overflow: auto;
+    }
+    
+    .app-bar {
+    position: absolute;
+    }
+    
+    .mdc-top-app-bar {
+    z-index: 7;
+    }

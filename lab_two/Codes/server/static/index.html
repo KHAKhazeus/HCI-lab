@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename = 'style.css') }}">
+        <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+        <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.css">
+        <script src="{{ url_for('static', filename = 'dropzone.js') }}"></script>
+        <link rel="stylesheet" href="https://rawgit.com/enyo/dropzone/master/dist/dropzone.css">
+        <script src="{{ url_for('static', filename = 'masonry.pkgd.js')}}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js" type="text/javascript"></script>
+          
+        <!-- nanogallery2 -->
+        <link  href="https://unpkg.com/nanogallery2@2.4.2/dist/css/nanogallery2.min.css" rel="stylesheet" type="text/css">
+        <script  type="text/javascript" src="https://unpkg.com/nanogallery2@2.4.2/dist/jquery.nanogallery2.min.js"></script>
+        <script>
+            var slider = null;
+            var formCheck = function(){
+                var checkedList = []
+                $("input:checkbox:checked").each(function(){
+                    var idwithcheck = $(this).attr('id');
+                    var name = idwithcheck.substr(9);
+                    checkedList.push(name);
+                });
+                return checkedList;
+            }
+
+            var preForm = formCheck()
+            var preNumber = 0;
+
+            var mydropzone;
+
+            var nowFile = null;
+
+            Dropzone.options.uploadImage = {
+                acceptedFiles: 'image/*',
+                maxFiles:1,
+                init: function() {
+                    mydropzone = this;
+                    this.on("maxfilesexceeded", function(file) {
+                        this.removeAllFiles();
+                        this.addFile(file);
+                    });
+                    this.on("success", reloadImages);
+                    this.on("sending", function(file, xhr, formData) {
+                        var filterData = formCheck();
+                        var howMany = slider.value;
+                        console.log(filterData)
+                        formData.append("filterParam", filterData);
+                        formData.append("number", howMany);
+                        console.log(formData);
+                    });
+                    var refreshCheck = function(){
+                        console.log("running");
+                        var nowForm = formCheck();
+                        var newNumber = slider.value;
+                        var identical = true;
+                        console.log(nowForm)
+                        console.log(preForm)
+                        for( var index in preForm){
+                            var element = preForm[index]
+                            var isIn = false
+                            for( var nowindex in nowForm){
+                                var nowElement = nowForm[nowindex]
+                                if(element == nowElement){
+                                    isIn = true
+                                }
+                            }
+                            if(!isIn){
+                                identical = false
+                            }
+                        }
+                        
+                        for( var index in nowForm){
+                            var element = nowForm[index]
+                            var isIn = false
+                            for( var nowindex in preForm){
+                                var nowElement = preForm[nowindex]
+                                if(element == nowElement){
+                                    isIn = true
+                                }
+                            }
+                            if(!isIn){
+                                identical = false
+                            }
+                        }
+
+                        if(newNumber != preNumber){
+                            identical = false;
+                        }
+                        
+                        if(identical){
+                            return;
+                        }
+                        else{
+                            if(nowFile != null){
+                                mydropzone.removeAllFiles();
+                                mydropzone.addFile(nowFile);
+                                nowFile = null;
+                            }
+                            preForm = nowForm;
+                            preNumber = newNumber;
+                        }
+                    };
+                    setInterval(refreshCheck, 2000)
+                    console.log("ok")
+                },
+            };
+
+
+
+            var images = []
+            
+            var reloadImages = function(file, response){
+                
+                images = []
+                nowFile = file;
+            
+                // var ngy2data = $("#nanogallery2").nanogallery2('data');
+                // var allitems = []
+                // ngy2data.items.forEach( function(item) {
+                //     allitems.push(item);
+                //     console.log("deleting")
+                //     if(item != undefined){
+                //         item.delete();
+                //     }
+                //     console.log("deleted");
+                // });
+                
+                // for(image in response){
+                //     var path = response[image];
+                //     newDict = { src: path, srct: path};
+                //     images.push(newDict);
+
+                //     var ngy2data = $("#nanogallery2").nanogallery2('data');
+                //     var instance = $("#nanogallery2").nanogallery2('instance');
+                //     var baseURL = "";
+
+                //     // create the new item
+                //     var ID = ngy2data.items.length + 1;
+                //     var albumID = '0';
+                //     var newItem = NGY2Item.New(instance, 'new berlin ' + ID, '', ID, albumID, 'image', '' );
+
+                //     // define thumbnail -> image displayed in the gallery
+                //     newItem.thumbSet( baseURL + path, 200, 200); // w,h
+
+                //     // define URL of the media to display in lightbox
+                //     newItem.setMediaURL( baseURL + path, 'img');
+                    
+                //     // currently displayed album
+                //     if( ngy2data.items[ngy2data.gallery.albumIdx].GetID() == 0 ) {
+                        
+                //         // add new item to current Gallery Object Model (GOM) 
+                //         newItem.addToGOM();
+                        
+                //         // refresh the display (-> only once if you add multiple items)
+
+                //     }
+                // }
+                // $("#nanogallery2").nanogallery2('resize');
+                console.log(response["recom_distance"])
+                var recom_distance = null;
+                if(response["recom_distance"] != null){
+                    recom_distance = response["recom_distance"]
+                }
+                for(image in response){
+                    if(image == "recom_distance"){
+                        continue;
+                    }
+                    var path = response[image];
+                    if(recom_distance != null){
+                        console.log(typeof(path))
+                        var strip = path.substr(1);
+                        console.log(path)
+                        console.log(recom_distance)
+                        console.log(recom_distance[strip])
+                        newDict = { src: path,  srct: path, title: recom_distance[strip].toString()}
+                    }
+                    else{
+                        newDict = { src: path, srct: path};
+                    }
+                    images.push(newDict);
+                }
+                $('#nanogallery2').nanogallery2('destroy');
+                $("#nanogallery2").nanogallery2( {
+                    // ### gallery settings ### 
+                    thumbnailWidth:   'auto',
+                    thumbnailHeight: 200,
+                    thumbnailDisplayTransition:          'scaleUp',
+                    thumbnailDisplayTransitionDuration:  500,
+                    thumbnailDisplayInterval:            30,
+                    thumbnailHoverEffect2:      'scale120',
+                    album:                 "none",
+                    galleryDisplayMode:    "pagination",
+                    galleryMaxRows:        2,
+                    galleryPaginationMode: "dots",
+                    
+                    
+                    // ### gallery content ### 
+                    items: images
+                });
+            }
+
+
+            $(document).ready(function () {
+
+                $("#nanogallery2").nanogallery2( {
+                    // ### gallery settings ### 
+                    thumbnailWidth:   'auto',
+                    thumbnailHeight: 200,
+                    itemsBaseURL:     'https://nanogallery2.nanostudio.org/samples/',
+                    thumbnailDisplayTransition:          'scaleUp',
+                    thumbnailDisplayTransitionDuration:  500,
+                    thumbnailDisplayInterval:            30,
+                    thumbnailHoverEffect2:      'scale120',
+                    album:                 "none",
+                    galleryDisplayMode:    "pagination",
+                    galleryMaxRows:        2,
+                    galleryPaginationMode: "dots",
+                    
+                    // ### gallery content ### 
+                    items: [
+                    ]
+                });
+                slider = new mdc.slider.MDCSlider(document.querySelector('.mdc-slider'));
+            });
+
+        </script>
+    </head>
+    <body>
+
+        <header class="mdc-top-app-bar app-bar" id="app-bar">
+            <div class="mdc-top-app-bar__row">
+                <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+                    <i class="material-icons">search</i>
+                    <span class="mdc-top-app-bar__title">My Image Search for HCI2</span>
+                </section>
+            </div>
+        </header>
+        
+        <aside class="mdc-drawer mdc-drawer--dismissible mdc-top-app-bar--fixed-adjust mdc-drawer--open" style="z-index: 0">
+            <div class="mdc-drawer__content">
+                <div class="mdc-list">
+                        <div class="mdc-slider mdc-slider--discrete" tabindex="0" role="slider"
+                        aria-valuemin="1" aria-valuemax="20" aria-valuenow="0"
+                        aria-label="Select Value" style="margin-left: 15px; margin-right: 10px; width: 80%;">
+                        <div style="margin: 10px;">How many?</div>
+                        <div class="mdc-slider__track-container">
+                            <div class="mdc-slider__track"></div>
+                        </div>
+                        <div class="mdc-slider__thumb-container">
+                            <div class="mdc-slider__pin">
+                            <span class="mdc-slider__pin-value-marker"></span>
+                            </div>
+                            <svg class="mdc-slider__thumb" width="21" height="21">
+                                <circle cx="10.5" cy="10.5" r="7.875"></circle>
+                            </svg>
+                            <div class="mdc-slider__focus-ring"></div>
+                        </div>
+                    </div>
+                        <a class="mdc-list-item" href="#" aria-current="page">
+                                <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-all"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-all">All</label>
+                                </div>
+                            </a>
+                    <a class="mdc-list-item" href="#" aria-current="page">
+                        <div class="mdc-form-field">
+                            <div class="mdc-checkbox">
+                                <input type="checkbox"
+                                        class="mdc-checkbox__native-control"
+                                        id="checkbox-sky"/>
+                                <div class="mdc-checkbox__background">
+                                <svg class="mdc-checkbox__checkmark"
+                                        viewBox="0 0 24 24">
+                                    <path class="mdc-checkbox__checkmark-path"
+                                        fill="none"
+                                        d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                </svg>
+                                <div class="mdc-checkbox__mixedmark"></div>
+                                </div>
+                            </div>
+                            <label for="checkbox-sky">Sky</label>
+                        </div>
+                    </a>
+                    <a class="mdc-list-item" href="#" aria-current="page">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-clouds"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-clouds">Clouds</label>
+                            </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-water"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-water">Water</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-sea"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-sea">Sea</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-river"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-river">River</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-lake"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-lake">Lake</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-people"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-people">People</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-portrait"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-portrait">Portrait</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-male"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-male">Male</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-female"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-female">Female</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-baby"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-baby">Baby</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-night"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-night">Night</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-plantlife"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-plantlife">Plantlife</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-tree"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-tree">Tree</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-flower"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-flower">Flower</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-animals"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-animals">Animals</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-dog"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-dog">Dog</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-bird"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-bird">Bird</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-structures"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-structures">Structures</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-sunset"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-sunset">Sunset</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-indoor"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-indoor">Indoor</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-transport"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-transport">Transport</label>
+                                </div>
+                    </a>
+                    <a class="mdc-list-item" href="#">
+                            <div class="mdc-form-field">
+                                    <div class="mdc-checkbox">
+                                        <input type="checkbox"
+                                                class="mdc-checkbox__native-control"
+                                                id="checkbox-car"/>
+                                        <div class="mdc-checkbox__background">
+                                        <svg class="mdc-checkbox__checkmark"
+                                                viewBox="0 0 24 24">
+                                            <path class="mdc-checkbox__checkmark-path"
+                                                fill="none"
+                                                d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                                        </svg>
+                                        <div class="mdc-checkbox__mixedmark"></div>
+                                        </div>
+                                    </div>
+                                    <label for="checkbox-car">Car</label>
+                                </div>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+
+
+            <main class="main-content" id="main-content">
+                <div id="dropzone" style="align-self: center">
+                    <form action="/imgUpload" method="post" class="dropzone dz-clickable" id="upload-image">
+                        <div class="dz-message">
+                            "Please upload your image :>"
+                        </div>
+                    </form>
+                </div>
+
+
+
+
+                <div id="nanogallery2" style="margin-left: auto; margin-right: auto">nanogallery2</div>      
+
+            </main>
+            
+        </div>
+                
+    </body>
+</html>
